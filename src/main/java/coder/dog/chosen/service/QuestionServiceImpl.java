@@ -87,7 +87,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     private synchronized Optional<Map<String,Integer>> getAnswerWithUUID(String UUID) throws Exception {
-        Optional<Map<String,Integer>> map = client.get(UUID);
+        Optional<Map<String,Integer>> map = Optional.ofNullable(client.get(UUID));
         if(map.isPresent()) {
             client.delete(UUID);
         }
