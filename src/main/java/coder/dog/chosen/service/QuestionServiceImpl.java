@@ -6,7 +6,6 @@ import coder.dog.chosen.view.ErrorResponse;
 import coder.dog.chosen.view.PasswordResponse;
 import coder.dog.chosen.view.QuestionResponse;
 import coder.dog.chosen.view.Response;
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
@@ -17,11 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * Created by megrez on 16/2/28.
@@ -73,22 +68,30 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     public Response getPassword(String uuid,Map<String,Integer> answerSheet) {
-        Map<String,Integer> correctMap = getAnswerWithUUID(uuid);
-        MapDifference<String,Integer> differences = Maps.difference(correctMap,answerSheet);
-        if(differences.areEqual()) {
-            return new PasswordResponse(UUID.randomUUID().toString());
+        Optional<Map<String, Integer>> correctMap;
+        try {
+            correctMap = getAnswerWithUUID(uuid);
+        } catch (Exception ex) {
+            return new ErrorResponse(500,"Internal Error");
+        }
+        if(correctMap.isPresent()) {
+            MapDifference<String, Integer> differences = Maps.difference(correctMap.get(), answerSheet);
+            if (differences.areEqual()) {
+                return new PasswordResponse(UUID.randomUUID().toString());
+            } else {
+                return new ErrorResponse(10000, "Error Answer");
+            }
         } else {
-            return new ErrorResponse(10000,"Error Answer");
+            return new ErrorResponse(10001, "Error UUID given");
         }
     }
 
-    private Map<String,Integer> getAnswerWithUUID(String UUID) {
-        try {
-            Map<String,Integer> map = client.get(UUID);
-            return map;
-        } catch (Exception ex) {
-            return new HashMap<>();
+    private synchronized Optional<Map<String,Integer>> getAnswerWithUUID(String UUID) throws Exception {
+        Optional<Map<String,Integer>> map = client.get(UUID);
+        if(map.isPresent()) {
+            client.delete(UUID);
         }
+        return map;
     }
 
 
