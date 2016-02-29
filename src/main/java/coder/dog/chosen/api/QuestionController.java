@@ -7,6 +7,7 @@ import coder.dog.chosen.view.Response;
 import coder.dog.chosen.view.View;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,9 @@ import java.util.Map;
 
 @RestController
 public class QuestionController {
+
+    private Logger logger = Logger.getLogger(QuestionController.class);
+
     @Autowired
     QuestionService service;
 
@@ -28,10 +32,12 @@ public class QuestionController {
     }
 
     @RequestMapping(path = "/api/password/{uuid}",method = RequestMethod.POST)
+    @JsonView(View.BaseResponseView.class)
     public Response answer(@PathVariable("uuid") String uuid,@RequestParam("answer") String answer) {
+        logger.info(answer);
         ObjectMapper mapper = new ObjectMapper();
         try {
-            Map<Long, Long> answerSheet = mapper.readValue(answer, HashMap.class);
+            Map<String, Integer> answerSheet = mapper.readValue(answer, HashMap.class);
             return service.getPassword(uuid,answerSheet);
         } catch (Exception ex) {
             return new ErrorResponse(400,"Error Parsing answer json object");

@@ -9,5 +9,5 @@ import java.util.Map;
  */
 public interface QuestionService {
     Response getRandomQuestions(int limit);
-    Response getPassword(String uuid,Map<Long,Long> answerSheet);
+    Response getPassword(String uuid,Map<String,Integer> answerSheet);
 }

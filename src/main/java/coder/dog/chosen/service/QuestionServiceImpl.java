@@ -2,10 +2,13 @@ package coder.dog.chosen.service;
 
 import coder.dog.chosen.dao.QuestionRepository;
 import coder.dog.chosen.model.Question;
+import coder.dog.chosen.view.ErrorResponse;
+import coder.dog.chosen.view.PasswordResponse;
 import coder.dog.chosen.view.QuestionResponse;
 import coder.dog.chosen.view.Response;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import net.rubyeye.xmemcached.MemcachedClient;
 import org.slf4j.Logger;
@@ -51,15 +54,15 @@ public class QuestionServiceImpl implements QuestionService {
         response.data = questionResponse;
         // RUN Background Cache
         pool.execute(() -> {
-            Map<Long, Integer> map = questionResponse.questions.stream().collect(HashMap::new,
-                    (imap, question) -> imap.put(question.getId(), question.getAnswer()),
+            Map<String, Integer> map = questionResponse.questions.stream().collect(HashMap::new,
+                    (imap, question) -> imap.put(question.getId().toString(), question.getAnswer()),
                     Map::putAll);
             // Cache Answers To Memcached
             try {
                 client.set(questionResponse.token, AN_HOUR, map);
-                Map<Long, Integer> oldMap = client.get(questionResponse.token);
+                Map<String, Integer> oldMap = client.get(questionResponse.token);
                 oldMap.forEach((aLong, integer) -> {
-                    String str = String.format("%d - %d", aLong, integer);
+                    String str = String.format("%s - %d", aLong, integer);
                     logger.info(str);
                 });
             } catch (Exception ex) {
@@ -69,12 +72,23 @@ public class QuestionServiceImpl implements QuestionService {
         return response;
     }
 
-    public Response getPassword(String uuid,Map<Long,Long> answerSheet) {
-        return null;
+    public Response getPassword(String uuid,Map<String,Integer> answerSheet) {
+        Map<String,Integer> correctMap = getAnswerWithUUID(uuid);
+        MapDifference<String,Integer> differences = Maps.difference(correctMap,answerSheet);
+        if(differences.areEqual()) {
+            return new PasswordResponse(UUID.randomUUID().toString());
+        } else {
+            return new ErrorResponse(10000,"Error Answer");
+        }
     }
 
-    private Map<Long,Long> getAnswerWithUUID(String UUID) {
-        return null;
+    private Map<String,Integer> getAnswerWithUUID(String UUID) {
+        try {
+            Map<String,Integer> map = client.get(UUID);
+            return map;
+        } catch (Exception ex) {
+            return new HashMap<>();
+        }
     }
 
 
