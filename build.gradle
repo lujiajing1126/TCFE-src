@@ -17,6 +17,7 @@ apply plugin: 'idea'
 apply plugin: 'spring-boot'
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
+apply plugin: 'war'
 
 jar {
     baseName = 'chosen-api'
@@ -38,6 +39,8 @@ dependencies {
     compile("org.postgresql:postgresql")
     compile("com.googlecode.xmemcached:xmemcached:2.0.0")
     optional("org.springframework.boot:spring-boot-configuration-processor")
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+    providedRuntime("org.apache.tomcat:tomcat-dbcp:8.0.32")
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }
 
